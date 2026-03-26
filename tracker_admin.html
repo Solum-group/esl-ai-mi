@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESL AI Tracker — 어드민</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard',-apple-system,sans-serif;background:#0d0020;color:#e2e8f0;min-height:100vh}
+input,button,select,textarea{font-family:inherit}
+
+/* ── 레이아웃 ─────────────────────────────── */
+.page{display:flex;flex-direction:column;min-height:100vh}
+.header{background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.08);
+  padding:14px 28px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.logo-mark{width:30px;height:30px;background:linear-gradient(135deg,#8B2BE2,#5B0EA6);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(139,43,226,0.4)}
+.logo-text{font-size:0.95rem;font-weight:800;color:#fff;letter-spacing:-0.03em}
+.logo-sub{font-size:0.68rem;color:rgba(255,255,255,0.4);margin-left:4px;font-weight:500}
+.logout-btn{margin-left:auto;padding:6px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);
+  background:transparent;color:rgba(255,255,255,0.6);font-size:0.72rem;cursor:pointer;transition:all 0.2s}
+.logout-btn:hover{background:rgba(255,255,255,0.08);color:#fff}
+.admin-email{font-size:0.72rem;color:rgba(255,255,255,0.4)}
+
+/* ── 탭 ──────────────────────────────────── */
+.tab-bar{display:flex;gap:4px;padding:16px 28px 0;border-bottom:1px solid rgba(255,255,255,0.08)}
+.tab-btn{padding:9px 18px;border-radius:10px 10px 0 0;border:none;background:transparent;
+  color:rgba(255,255,255,0.45);font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+.tab-btn:hover{color:rgba(255,255,255,0.7);background:rgba(255,255,255,0.05)}
+.tab-btn.active{background:rgba(139,43,226,0.18);color:#c084fc;border-bottom:2px solid #8B2BE2}
+.tab-panel{display:none;padding:24px 28px}
+.tab-panel.active{display:block}
+
+/* ── 카드 ─────────────────────────────────── */
+.card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:20px 22px;margin-bottom:16px}
+.card-title{font-size:0.85rem;font-weight:800;color:#e2e8f0;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-label{font-size:0.7rem;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;
+  letter-spacing:0.06em;margin-bottom:10px;margin-top:20px}
+.section-label:first-child{margin-top:0}
+
+/* ── 폼 ──────────────────────────────────── */
+.form-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.form-input{flex:1;min-width:180px;padding:10px 13px;border-radius:9px;
+  border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);
+  color:#e2e8f0;font-size:0.82rem;outline:none;transition:border-color 0.2s}
+.form-input:focus{border-color:rgba(139,43,226,0.6)}
+.form-input::placeholder{color:rgba(255,255,255,0.25)}
+.btn{padding:10px 18px;border-radius:9px;border:none;cursor:pointer;font-size:0.8rem;font-weight:700;
+  font-family:inherit;transition:all 0.2s;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,#8B2BE2,#6D22B3);color:#fff;box-shadow:0 2px 8px rgba(139,43,226,0.35)}
+.btn-primary:hover{opacity:0.88}
+.btn-danger{background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.25)}
+.btn-danger:hover{background:rgba(239,68,68,0.25)}
+.btn-warn{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.25)}
+.btn-warn:hover{background:rgba(245,158,11,0.25)}
+.btn-ghost{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.65);border:1px solid rgba(255,255,255,0.12)}
+.btn-ghost:hover{background:rgba(255,255,255,0.1)}
+.btn-sm{padding:5px 11px;font-size:0.72rem}
+
+/* ── 테이블 ───────────────────────────────── */
+.tbl{width:100%;border-collapse:collapse;font-size:0.78rem}
+.tbl th{text-align:left;padding:10px 12px;font-size:0.68rem;font-weight:700;
+  color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.05em;
+  border-bottom:1px solid rgba(255,255,255,0.08)}
+.tbl td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,0.05);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(255,255,255,0.03)}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:0.65rem;font-weight:700}
+.badge-admin{background:rgba(139,43,226,0.18);color:#c084fc;border:1px solid rgba(139,43,226,0.3)}
+.badge-user{background:rgba(34,197,94,0.12);color:#4ade80;border:1px solid rgba(34,197,94,0.25)}
+
+/* ── 알림 ─────────────────────────────────── */
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 18px;border-radius:10px;
+  font-size:0.8rem;font-weight:600;animation:slideUp 0.3s ease;max-width:320px}
+.toast-ok{background:#15803d;color:#fff}
+.toast-err{background:#dc2626;color:#fff}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── 빈 상태 ──────────────────────────────── */
+.empty-state{text-align:center;padding:40px 20px;color:rgba(255,255,255,0.3);font-size:0.8rem}
+
+/* ── 레코드 뷰어 ──────────────────────────── */
+.rec-row{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;
+  padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.rec-date{font-size:0.82rem;font-weight:700;color:#c084fc;flex-shrink:0;width:100px}
+.rec-meta{font-size:0.72rem;color:rgba(255,255,255,0.45);flex:1}
+.rec-ais{display:flex;gap:6px;flex-wrap:wrap}
+.rec-ai-chip{padding:2px 8px;border-radius:6px;font-size:0.65rem;font-weight:700}
+
+/* ── 로그인/부트스트랩 오버레이 ────────────── */
+.overlay{display:none;position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#0d0020 0%,#1a0040 50%,#0d0020 100%);
+  align-items:center;justify-content:center}
+.overlay-card{width:100%;max-width:400px;padding:0 24px}
+.overlay-logo{text-align:center;margin-bottom:32px}
+.overlay-box{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  border-radius:16px;padding:28px 24px;backdrop-filter:blur(20px)}
+.overlay-box h2{font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:20px;text-align:center}
+label.ov-label{font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.55);display:block;margin-bottom:6px}
+.ov-input{width:100%;box-sizing:border-box;padding:11px 14px;border-radius:10px;
+  border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);
+  color:#fff;font-size:0.84rem;font-family:inherit;outline:none;margin-bottom:14px}
+.ov-input:focus{border-color:rgba(139,43,226,0.7)}
+.ov-btn{width:100%;padding:12px;border-radius:10px;border:none;cursor:pointer;font-family:inherit;
+  background:linear-gradient(135deg,#8B2BE2,#6D22B3);color:#fff;font-size:0.88rem;font-weight:700;
+  box-shadow:0 4px 16px rgba(139,43,226,0.4);margin-top:4px}
+.ov-err{display:none;font-size:0.72rem;color:#f87171;margin-bottom:12px;text-align:center;
+  padding:8px;background:rgba(239,68,68,0.1);border-radius:8px;border:1px solid rgba(239,68,68,0.2)}
+</style>
+</head>
+<body>
+
+<!-- ── 부트스트랩 오버레이 (최초 어드민 없을 때) ─────────────────── -->
+<div id="bootstrap-overlay" class="overlay">
+  <div class="overlay-card">
+    <div class="overlay-logo">
+      <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="logo-mark"><svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="4" fill="white" opacity="0.9"/>
+          <circle cx="10" cy="10" r="8" stroke="white" stroke-width="1.5" opacity="0.4"/>
+        </svg></div>
+        <span style="font-size:1.2rem;font-weight:800;color:#fff">ESL AI Tracker</span>
+      </div>
+      <p style="font-size:0.75rem;color:rgba(255,255,255,0.4)">최초 어드민 계정을 설정합니다</p>
+    </div>
+    <div class="overlay-box">
+      <h2>어드민 부트스트랩</h2>
+      <div class="ov-err" id="bs-err"></div>
+      <label class="ov-label">부트스트랩 코드</label>
+      <input class="ov-input" id="bs-code" type="password" placeholder="부트스트랩 코드 입력"
+        onkeydown="if(event.key==='Enter')document.getElementById('bs-email').focus()">
+      <label class="ov-label">어드민 이메일</label>
+      <input class="ov-input" id="bs-email" type="email" placeholder="admin@solum.com"
+        onkeydown="if(event.key==='Enter')document.getElementById('bs-pw').focus()">
+      <label class="ov-label">초기 비밀번호</label>
+      <input class="ov-input" id="bs-pw" type="password" placeholder="8자 이상, 영문·숫자·특수문자 포함"
+        onkeydown="if(event.key==='Enter')bootstrapAdmin()">
+      <div class="ov-err" id="bs-err2"></div>
+      <button class="ov-btn" onclick="bootstrapAdmin()">어드민 계정 생성</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 로그인 오버레이 ─────────────────────────────────────────────── -->
+<div id="login-overlay" class="overlay">
+  <div class="overlay-card">
+    <div class="overlay-logo">
+      <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="logo-mark"><svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="4" fill="white" opacity="0.9"/>
+          <circle cx="10" cy="10" r="8" stroke="white" stroke-width="1.5" opacity="0.4"/>
+        </svg></div>
+        <span style="font-size:1.2rem;font-weight:800;color:#fff">ESL AI Tracker</span>
+      </div>
+      <p style="font-size:0.75rem;color:rgba(255,255,255,0.4)">어드민 전용 페이지</p>
+    </div>
+    <div class="overlay-box">
+      <h2>어드민 로그인</h2>
+      <div class="ov-err" id="login-err"></div>
+      <label class="ov-label">이메일</label>
+      <input class="ov-input" id="login-email" type="email" placeholder="이메일"
+        onkeydown="if(event.key==='Enter')document.getElementById('login-pw').focus()">
+      <label class="ov-label">비밀번호</label>
+      <input class="ov-input" id="login-pw" type="password" placeholder="비밀번호"
+        onkeydown="if(event.key==='Enter')adminLogin()">
+      <button class="ov-btn" onclick="adminLogin()" id="login-btn">로그인</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 메인 앱 ────────────────────────────────────────────────────── -->
+<div id="app" style="display:none" class="page">
+  <header class="header">
+    <div class="logo-mark">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="4" fill="white" opacity="0.9"/>
+        <circle cx="10" cy="10" r="8" stroke="white" stroke-width="1.5" opacity="0.4"/>
+      </svg>
+    </div>
+    <span class="logo-text">ESL AI Tracker</span>
+    <span class="logo-sub">Admin</span>
+    <span class="admin-email" id="header-email"></span>
+    <button class="logout-btn" onclick="adminLogout()">로그아웃</button>
+  </header>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('records',this)">📊 레코드 관리</button>
+    <button class="tab-btn" onclick="switchTab('users',this)">👤 사용자 계정</button>
+    <button class="tab-btn" onclick="switchTab('admins',this)">🔑 어드민 관리</button>
+  </div>
+
+  <!-- ── 레코드 관리 탭 ──────────────────────────────────────────── -->
+  <div id="tab-records" class="tab-panel active">
+
+    <div class="card">
+      <div class="card-title">➕ 새 수집 레코드 추가</div>
+      <div class="form-row">
+        <input class="form-input" id="rec-date" type="date" style="max-width:160px">
+        <input class="form-input" id="rec-questions" type="number" placeholder="질문 수 (기본 50)" style="max-width:140px" value="50">
+        <input class="form-input" id="rec-note" placeholder="수집 메모 (선택)" style="flex:2">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+        <div>
+          <div class="section-label" style="margin-top:0">🟢 Gemini</div>
+          <textarea class="form-input" id="rec-gemini" rows="6" placeholder='{"VusionGroup":41,"SoluM":27,...}'
+            style="width:100%;resize:vertical;font-size:0.75rem;font-family:monospace"></textarea>
+        </div>
+        <div>
+          <div class="section-label" style="margin-top:0">🟡 ChatGPT</div>
+          <textarea class="form-input" id="rec-chatgpt" rows="6" placeholder='{"VusionGroup":79,"SoluM":21,...}'
+            style="width:100%;resize:vertical;font-size:0.75rem;font-family:monospace"></textarea>
+        </div>
+        <div>
+          <div class="section-label" style="margin-top:0">🟠 Claude</div>
+          <textarea class="form-input" id="rec-claude" rows="6" placeholder='{"VusionGroup":94,"SoluM":34,...}'
+            style="width:100%;resize:vertical;font-size:0.75rem;font-family:monospace"></textarea>
+        </div>
+      </div>
+      <div id="rec-add-err" style="display:none;font-size:0.73rem;color:#f87171;margin-bottom:8px"></div>
+      <button class="btn btn-primary" onclick="addRecord()">레코드 저장</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 저장된 레코드 <span id="rec-count" style="font-size:0.72rem;font-weight:500;color:rgba(255,255,255,0.4)"></span></div>
+      <div id="records-list"><div class="empty-state">로드 중...</div></div>
+    </div>
+  </div>
+
+  <!-- ── 사용자 계정 탭 ──────────────────────────────────────────── -->
+  <div id="tab-users" class="tab-panel">
+    <div class="card">
+      <div class="card-title">➕ 사용자 계정 생성</div>
+      <div class="form-row">
+        <input class="form-input" id="new-user-email" type="email" placeholder="이메일">
+        <button class="btn btn-primary" onclick="createUser()">계정 생성</button>
+      </div>
+      <p style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:4px">
+        초기 비밀번호: <code style="color:#c084fc">thffndpa2026</code> — 첫 로그인 시 변경 안내 없음 (직접 전달)
+      </p>
+    </div>
+    <div class="card">
+      <div class="card-title">👤 사용자 목록</div>
+      <div id="users-table"><div class="empty-state">로드 중...</div></div>
+    </div>
+  </div>
+
+  <!-- ── 어드민 관리 탭 ──────────────────────────────────────────── -->
+  <div id="tab-admins" class="tab-panel">
+    <div class="card">
+      <div class="card-title">➕ 어드민 계정 생성</div>
+      <div class="form-row">
+        <input class="form-input" id="new-admin-email" type="email" placeholder="이메일">
+        <button class="btn btn-primary" onclick="createAdmin()">어드민 생성</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔑 어드민 목록</div>
+      <div id="admins-table"><div class="empty-state">로드 중...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   Firebase 설정
+════════════════════════════════════════════════════════════ */
+const FB_DB     = 'https://esl-weekly-report-default-rtdb.asia-southeast1.firebasedatabase.app';
+const FB_SECRET = 'HRsPR80bFHi6RlgxSf22DWdYOcDok78Obg2dPyWC';
+const FB_PATH   = '/ai-tracker';
+const BOOTSTRAP_CODE = 'tracker_admin_2026';
+const INIT_PW   = 'thffndpa2026';
+
+const ADMIN_AUTH_KEY   = 'tracker_admin_auth';
+const ADMIN_EMAIL_KEY  = 'tracker_admin_email';
+
+/* ── Firebase REST ─────────────────────────────────────── */
+async function fbGet(path) {
+  const r = await fetch(`${FB_DB}${path}.json?auth=${FB_SECRET}`);
+  return r.ok ? r.json() : null;
+}
+async function fbSet(path, data) {
+  const r = await fetch(`${FB_DB}${path}.json?auth=${FB_SECRET}`, {
+    method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)
+  });
+  return r.ok;
+}
+async function fbDelete(path) {
+  const r = await fetch(`${FB_DB}${path}.json?auth=${FB_SECRET}`, { method:'DELETE' });
+  return r.ok;
+}
+
+/* ── SHA-256 ───────────────────────────────────────────── */
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function emailKey(e) { return e.replace(/[@.]/g,'_'); }
+function isStrongPw(pw) {
+  return pw.length>=8 && /[a-zA-Z]/.test(pw) && /[0-9]/.test(pw) && /[!@#$%^&*()\-_=+\[\]{};':",.<>?/\\|`~]/.test(pw);
+}
+
+/* ── Toast ─────────────────────────────────────────────── */
+function toast(msg, type='ok') {
+  const t = document.createElement('div');
+  t.className = 'toast toast-'+(type==='ok'?'ok':'err');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+/* ── 탭 전환 ────────────────────────────────────────────── */
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+/* ════════════════════════════════════════════════════════════
+   인증
+════════════════════════════════════════════════════════════ */
+async function adminLogin() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const pw    = document.getElementById('login-pw').value;
+  const errEl = document.getElementById('login-err');
+  const btn   = document.getElementById('login-btn');
+  errEl.style.display='none';
+  if (!email||!pw){errEl.textContent='이메일과 비밀번호를 입력해주세요.';errEl.style.display='block';return;}
+  btn.textContent='확인 중...';btn.disabled=true;
+  try {
+    const acc = await fbGet(`${FB_PATH}/admins/${emailKey(email)}`);
+    if (!acc){errEl.textContent='등록되지 않은 어드민 계정입니다.';errEl.style.display='block';btn.textContent='로그인';btn.disabled=false;return;}
+    const hash = await sha256(pw);
+    if (hash!==acc.passwordHash){errEl.textContent='비밀번호가 일치하지 않습니다.';errEl.style.display='block';btn.textContent='로그인';btn.disabled=false;return;}
+    sessionStorage.setItem(ADMIN_AUTH_KEY,'true');
+    sessionStorage.setItem(ADMIN_EMAIL_KEY,email);
+    showApp();
+  } catch(e){errEl.textContent='네트워크 오류가 발생했습니다.';errEl.style.display='block';btn.textContent='로그인';btn.disabled=false;}
+}
+
+function adminLogout() {
+  sessionStorage.removeItem(ADMIN_AUTH_KEY);
+  sessionStorage.removeItem(ADMIN_EMAIL_KEY);
+  location.reload();
+}
+
+/* ════════════════════════════════════════════════════════════
+   부트스트랩
+════════════════════════════════════════════════════════════ */
+async function bootstrapAdmin() {
+  const code  = document.getElementById('bs-code').value;
+  const email = document.getElementById('bs-email').value.trim().toLowerCase();
+  const pw    = document.getElementById('bs-pw').value;
+  const errEl = document.getElementById('bs-err2');
+  errEl.style.display='none';
+  if (code!==BOOTSTRAP_CODE){errEl.textContent='부트스트랩 코드가 올바르지 않습니다.';errEl.style.display='block';return;}
+  if (!email){errEl.textContent='이메일을 입력해주세요.';errEl.style.display='block';return;}
+  if (!isStrongPw(pw)){errEl.textContent='비밀번호는 8자 이상, 영문·숫자·특수문자를 포함해야 합니다.';errEl.style.display='block';return;}
+  const hash = await sha256(pw);
+  const ok = await fbSet(`${FB_PATH}/admins/${emailKey(email)}`,{email,passwordHash:hash,createdAt:new Date().toISOString()});
+  if (ok){
+    sessionStorage.setItem(ADMIN_AUTH_KEY,'true');
+    sessionStorage.setItem(ADMIN_EMAIL_KEY,email);
+    showApp();
+  } else {
+    errEl.textContent='저장 실패 — Firebase 연결을 확인해주세요.';errEl.style.display='block';
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   앱 초기화
+════════════════════════════════════════════════════════════ */
+async function showApp() {
+  document.getElementById('login-overlay').style.display='none';
+  document.getElementById('bootstrap-overlay').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('header-email').textContent = sessionStorage.getItem(ADMIN_EMAIL_KEY)||'';
+  await Promise.all([loadRecords(), loadUsers(), loadAdmins()]);
+}
+
+(async function init() {
+  // 어드민 존재 여부 확인
+  const admins = await fbGet(`${FB_PATH}/admins`);
+  if (!admins || Object.keys(admins).length===0) {
+    document.getElementById('bootstrap-overlay').style.display='flex';
+    return;
+  }
+  // 이미 로그인된 경우
+  if (sessionStorage.getItem(ADMIN_AUTH_KEY)==='true') {
+    showApp();
+    return;
+  }
+  document.getElementById('login-overlay').style.display='flex';
+})();
+
+/* ════════════════════════════════════════════════════════════
+   레코드 관리
+════════════════════════════════════════════════════════════ */
+let cachedRecords = {};
+
+async function loadRecords() {
+  const data = await fbGet(`${FB_PATH}/records`);
+  cachedRecords = data || {};
+  renderRecords();
+}
+
+function renderRecords() {
+  const el = document.getElementById('records-list');
+  const entries = Object.entries(cachedRecords).sort((a,b)=>b[0].localeCompare(a[0]));
+  document.getElementById('rec-count').textContent = `(${entries.length}건)`;
+  if (!entries.length){el.innerHTML='<div class="empty-state">저장된 레코드가 없습니다</div>';return;}
+  el.innerHTML = entries.map(([date, rec]) => {
+    const total = (co) => {
+      let t=0;
+      ['gemini','chatgpt','claude'].forEach(ai=>{ if(rec[ai]) Object.values(rec[ai]).forEach(v=>t+=v); });
+      return t;
+    };
+    const aiChips = ['gemini','chatgpt','claude'].map(ai => {
+      const hasData = rec[ai] && Object.keys(rec[ai]).length > 0;
+      const colors = {gemini:'background:rgba(26,186,123,0.18);color:#34d399;border:1px solid rgba(26,186,123,0.3)',
+        chatgpt:'background:rgba(16,163,127,0.18);color:#2dd4bf;border:1px solid rgba(16,163,127,0.3)',
+        claude:'background:rgba(139,43,226,0.18);color:#c084fc;border:1px solid rgba(139,43,226,0.3)'};
+      const labels = {gemini:'Gemini', chatgpt:'ChatGPT', claude:'Claude'};
+      return hasData
+        ? `<span class="rec-ai-chip" style="${colors[ai]}">${labels[ai]}</span>`
+        : `<span class="rec-ai-chip" style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.1)">${labels[ai]} —</span>`;
+    }).join('');
+    const note = rec.note ? `<span style="margin-left:8px;font-size:0.68rem;color:rgba(255,255,255,0.3)">${rec.note.substring(0,60)}${rec.note.length>60?'…':''}</span>` : '';
+    return `
+      <div class="rec-row">
+        <span class="rec-date">${date}</span>
+        <div class="rec-ais">${aiChips}</div>
+        <div class="rec-meta">질문 ${rec.questions||50}개${note}</div>
+        <button class="btn btn-danger btn-sm" onclick="deleteRecord('${date}')">삭제</button>
+      </div>`;
+  }).join('');
+}
+
+async function addRecord() {
+  const date     = document.getElementById('rec-date').value;
+  const questions= parseInt(document.getElementById('rec-questions').value)||50;
+  const note     = document.getElementById('rec-note').value.trim();
+  const errEl    = document.getElementById('rec-add-err');
+  errEl.style.display='none';
+
+  if (!date){errEl.textContent='날짜를 선택해주세요.';errEl.style.display='block';return;}
+
+  function parseAI(id) {
+    const val = document.getElementById(id).value.trim();
+    if (!val) return null;
+    try { return JSON.parse(val); }
+    catch(e) { throw new Error(`${id} JSON 형식 오류: ${e.message}`); }
+  }
+
+  let gemini, chatgpt, claude;
+  try {
+    gemini  = parseAI('rec-gemini');
+    chatgpt = parseAI('rec-chatgpt');
+    claude  = parseAI('rec-claude');
+  } catch(e) {
+    errEl.textContent=e.message; errEl.style.display='block'; return;
+  }
+  if (!gemini && !chatgpt && !claude){errEl.textContent='최소 하나의 AI 데이터를 입력해주세요.';errEl.style.display='block';return;}
+
+  const rec = { date, questions };
+  if (note) rec.note = note;
+  if (gemini)  rec.gemini  = gemini;
+  if (chatgpt) rec.chatgpt = chatgpt;
+  if (claude)  rec.claude  = claude;
+
+  const ok = await fbSet(`${FB_PATH}/records/${date}`, rec);
+  if (ok) {
+    toast(`${date} 레코드가 저장되었습니다`);
+    ['rec-gemini','rec-chatgpt','rec-claude','rec-note'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('rec-date').value='';
+    await loadRecords();
+  } else {
+    errEl.textContent='저장 실패 — Firebase 연결을 확인해주세요.'; errEl.style.display='block';
+  }
+}
+
+async function deleteRecord(date) {
+  if (!confirm(`${date} 레코드를 삭제하시겠습니까?`)) return;
+  const ok = await fbDelete(`${FB_PATH}/records/${date}`);
+  if (ok) { toast(`${date} 레코드 삭제됨`); await loadRecords(); }
+  else toast('삭제 실패','err');
+}
+
+/* ════════════════════════════════════════════════════════════
+   사용자 계정 관리
+════════════════════════════════════════════════════════════ */
+let cachedUsers = {};
+
+async function loadUsers() {
+  cachedUsers = await fbGet(`${FB_PATH}/accounts`) || {};
+  renderUsers();
+}
+
+function renderUsers() {
+  const el = document.getElementById('users-table');
+  const entries = Object.entries(cachedUsers);
+  if (!entries.length){el.innerHTML='<div class="empty-state">등록된 사용자가 없습니다</div>';return;}
+  el.innerHTML = `<table class="tbl">
+    <thead><tr><th>이메일</th><th>생성일</th><th>액션</th></tr></thead>
+    <tbody>${entries.map(([k,u])=>`
+      <tr>
+        <td><span class="badge badge-user">USER</span> <span style="margin-left:6px">${u.email}</span></td>
+        <td style="color:rgba(255,255,255,0.45)">${u.createdAt?u.createdAt.substring(0,10):'—'}</td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-warn btn-sm" onclick="resetUserPw('${k}','${u.email}')">비밀번호 초기화</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteUser('${k}','${u.email}')">삭제</button>
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function createUser() {
+  const email = document.getElementById('new-user-email').value.trim().toLowerCase();
+  if (!email){toast('이메일을 입력해주세요','err');return;}
+  const hash = await sha256(email + ':' + INIT_PW);
+  const ok = await fbSet(`${FB_PATH}/accounts/${emailKey(email)}`,{email,passwordHash:hash,mustChangePassword:true,createdAt:new Date().toISOString()});
+  if (ok){toast(`${email} 계정이 생성되었습니다`);document.getElementById('new-user-email').value='';await loadUsers();}
+  else toast('생성 실패','err');
+}
+
+async function resetUserPw(key, email) {
+  if (!confirm(`${email} 비밀번호를 초기화하시겠습니까?`)) return;
+  const hash = await sha256(email + ':' + INIT_PW);
+  const ok = await fbSet(`${FB_PATH}/accounts/${key}`, {
+    ...cachedUsers[key],
+    passwordHash: hash,
+    mustChangePassword: true,
+    failedAttempts: 0,
+    lockUntil: null
+  });
+  if (ok) toast(`${email} 비밀번호가 초기화되었습니다`);
+  else toast('초기화 실패','err');
+}
+
+async function deleteUser(key, email) {
+  if (!confirm(`${email} 계정을 삭제하시겠습니까?`)) return;
+  const ok = await fbDelete(`${FB_PATH}/accounts/${key}`);
+  if (ok){toast(`${email} 계정 삭제됨`);await loadUsers();}
+  else toast('삭제 실패','err');
+}
+
+/* ════════════════════════════════════════════════════════════
+   어드민 계정 관리
+════════════════════════════════════════════════════════════ */
+let cachedAdmins = {};
+
+async function loadAdmins() {
+  cachedAdmins = await fbGet(`${FB_PATH}/admins`) || {};
+  renderAdmins();
+}
+
+function renderAdmins() {
+  const el = document.getElementById('admins-table');
+  const entries = Object.entries(cachedAdmins);
+  const myEmail = sessionStorage.getItem(ADMIN_EMAIL_KEY)||'';
+  if (!entries.length){el.innerHTML='<div class="empty-state">등록된 어드민이 없습니다</div>';return;}
+  el.innerHTML = `<table class="tbl">
+    <thead><tr><th>이메일</th><th>생성일</th><th>액션</th></tr></thead>
+    <tbody>${entries.map(([k,a])=>`
+      <tr>
+        <td><span class="badge badge-admin">ADMIN</span> <span style="margin-left:6px">${a.email}</span>
+          ${a.email===myEmail?'<span style="font-size:0.65rem;color:rgba(255,255,255,0.3);margin-left:6px">(나)</span>':''}</td>
+        <td style="color:rgba(255,255,255,0.45)">${a.createdAt?a.createdAt.substring(0,10):'—'}</td>
+        <td style="display:flex;gap:6px">
+          <button class="btn btn-warn btn-sm" onclick="resetAdminPw('${k}','${a.email}')">비밀번호 초기화</button>
+          ${a.email!==myEmail?`<button class="btn btn-danger btn-sm" onclick="deleteAdmin('${k}','${a.email}')">삭제</button>`:''}
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+
+async function createAdmin() {
+  const email = document.getElementById('new-admin-email').value.trim().toLowerCase();
+  if (!email){toast('이메일을 입력해주세요','err');return;}
+  const hash = await sha256(email + ':' + INIT_PW);
+  const ok = await fbSet(`${FB_PATH}/admins/${emailKey(email)}`,{email,passwordHash:hash,mustChangePassword:true,createdAt:new Date().toISOString()});
+  if (ok){toast(`${email} 어드민이 생성되었습니다`);document.getElementById('new-admin-email').value='';await loadAdmins();}
+  else toast('생성 실패','err');
+}
+
+async function resetAdminPw(key, email) {
+  if (!confirm(`${email} 비밀번호를 초기화하시겠습니까?`)) return;
+  const hash = await sha256(email + ':' + INIT_PW);
+  const ok = await fbSet(`${FB_PATH}/admins/${key}`, {
+    ...cachedAdmins[key],
+    passwordHash: hash,
+    mustChangePassword: true,
+    failedAttempts: 0,
+    lockUntil: null
+  });
+  if (ok) toast(`${email} 비밀번호가 초기화되었습니다`);
+  else toast('초기화 실패','err');
+}
+
+async function deleteAdmin(key, email) {
+  const myEmail = sessionStorage.getItem(ADMIN_EMAIL_KEY)||'';
+  if (email===myEmail){toast('자신의 계정은 삭제할 수 없습니다','err');return;}
+  if (!confirm(`${email} 어드민 계정을 삭제하시겠습니까?`)) return;
+  const ok = await fbDelete(`${FB_PATH}/admins/${key}`);
+  if (ok){toast(`${email} 어드민 삭제됨`);await loadAdmins();}
+  else toast('삭제 실패','err');
+}
+</script>
+</body>
+</html>
