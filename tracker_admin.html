@@ -189,6 +189,7 @@ label.ov-label{font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.55);di
     <button class="tab-btn active" onclick="switchTab('records',this)">📊 레코드 관리</button>
     <button class="tab-btn" onclick="switchTab('users',this)">👤 사용자 계정</button>
     <button class="tab-btn" onclick="switchTab('admins',this)">🔑 어드민 관리</button>
+    <button class="tab-btn" onclick="switchTab('access',this)">📈 접속 현황</button>
   </div>
 
   <!-- ── 레코드 관리 탭 ──────────────────────────────────────────── -->
@@ -260,6 +261,40 @@ label.ov-label{font-size:0.72rem;font-weight:600;color:rgba(255,255,255,0.55);di
       <div id="admins-table"><div class="empty-state">로드 중...</div></div>
     </div>
   </div>
+
+  <!-- ── 접속 현황 탭 ──────────────────────────────────────────── -->
+  <div id="tab-access" class="tab-panel">
+    <!-- 요약 통계 카드 -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+      <div class="card" style="margin:0;padding:16px 20px">
+        <div style="font-size:0.68rem;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-bottom:6px">전체 계정</div>
+        <div id="stat-total" style="font-size:1.6rem;font-weight:800;color:#fff">—</div>
+      </div>
+      <div class="card" style="margin:0;padding:16px 20px">
+        <div style="font-size:0.68rem;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-bottom:6px">오늘 접속</div>
+        <div id="stat-today" style="font-size:1.6rem;font-weight:800;color:#22c55e">—</div>
+      </div>
+      <div class="card" style="margin:0;padding:16px 20px">
+        <div style="font-size:0.68rem;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-bottom:6px">미접속 계정</div>
+        <div id="stat-never" style="font-size:1.6rem;font-weight:800;color:rgba(255,255,255,0.4)">—</div>
+      </div>
+      <div class="card" style="margin:0;padding:16px 20px">
+        <div style="font-size:0.68rem;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-bottom:6px">잠금 계정</div>
+        <div id="stat-locked" style="font-size:1.6rem;font-weight:800;color:#f87171">—</div>
+      </div>
+    </div>
+
+    <!-- 접속 현황 테이블 -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="card-title" style="margin:0">📈 계정별 접속 현황</div>
+        <button class="btn btn-sm" onclick="loadAccessStats()"
+          style="font-size:0.72rem;padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);
+          background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);cursor:pointer">새로고침</button>
+      </div>
+      <div id="access-table"><div class="empty-state">로드 중...</div></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -316,6 +351,93 @@ function switchTab(name, btn) {
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   if(btn) btn.classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'access') loadAccessStats();
+}
+
+/* ════════════════════════════════════════════════════════════
+   접속 현황
+════════════════════════════════════════════════════════════ */
+async function loadAccessStats() {
+  document.getElementById('access-table').innerHTML = '<div class="empty-state">로드 중...</div>';
+
+  const [accounts, admins] = await Promise.all([
+    fbGet(`${FB_PATH}/accounts`),
+    fbGet(`${FB_PATH}/admins`)
+  ]);
+
+  // 사용자 + 어드민 통합
+  const all = [];
+  Object.values(accounts || {}).forEach(a => all.push({ ...a, role: 'user' }));
+  Object.values(admins  || {}).forEach(a => all.push({ ...a, role: 'admin' }));
+
+  // 마지막 접속 기준 내림차순 정렬
+  all.sort((a, b) => {
+    if (!a.lastLogin && !b.lastLogin) return 0;
+    if (!a.lastLogin) return 1;
+    if (!b.lastLogin) return -1;
+    return new Date(b.lastLogin) - new Date(a.lastLogin);
+  });
+
+  // 요약 통계
+  const today = new Date().toISOString().slice(0, 10);
+  const statTotal  = all.length;
+  const statToday  = all.filter(a => a.lastLogin && a.lastLogin.startsWith(today)).length;
+  const statNever  = all.filter(a => !a.lastLogin).length;
+  const statLocked = all.filter(a => a.lockUntil && a.lockUntil > Date.now()).length;
+
+  document.getElementById('stat-total').textContent  = statTotal;
+  document.getElementById('stat-today').textContent  = statToday;
+  document.getElementById('stat-never').textContent  = statNever;
+  document.getElementById('stat-locked').textContent = statLocked;
+
+  if (!all.length) {
+    document.getElementById('access-table').innerHTML = '<div class="empty-state">등록된 계정이 없습니다</div>';
+    return;
+  }
+
+  const rows = all.map(a => {
+    const isLocked = a.lockUntil && a.lockUntil > Date.now();
+    const needsPw  = a.mustChangePassword;
+    const lastLogin = a.lastLogin
+      ? new Date(a.lastLogin).toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' })
+      : '—';
+
+    let statusBadge = '<span style="font-size:0.65rem;padding:2px 7px;border-radius:4px;background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.25)">정상</span>';
+    if (isLocked) {
+      const remain = Math.ceil((a.lockUntil - Date.now()) / 60000);
+      statusBadge = `<span style="font-size:0.65rem;padding:2px 7px;border-radius:4px;background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25)">잠금 (${remain}분)</span>`;
+    } else if (needsPw) {
+      statusBadge = '<span style="font-size:0.65rem;padding:2px 7px;border-radius:4px;background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.25)">비밀번호 변경 필요</span>';
+    } else if (!a.lastLogin) {
+      statusBadge = '<span style="font-size:0.65rem;padding:2px 7px;border-radius:4px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.35);border:1px solid rgba(255,255,255,0.1)">미접속</span>';
+    }
+
+    const roleBadge = a.role === 'admin'
+      ? '<span class="badge badge-admin">ADMIN</span>'
+      : '<span class="badge" style="background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.3)">USER</span>';
+
+    return `<tr>
+      <td>${roleBadge} <span style="margin-left:6px">${a.email}</span></td>
+      <td style="color:rgba(255,255,255,0.55)">${lastLogin}</td>
+      <td style="color:rgba(255,255,255,0.55);text-align:center">${a.loginCount || 0}회</td>
+      <td style="color:rgba(255,255,255,0.45);text-align:center">${a.failedAttempts || 0}회</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('access-table').innerHTML = `
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>이메일</th>
+          <th>마지막 접속</th>
+          <th style="text-align:center">총 접속</th>
+          <th style="text-align:center">로그인 실패</th>
+          <th>상태</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
 }
 
 /* ════════════════════════════════════════════════════════════
